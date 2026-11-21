@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "galetools"
+version = "2.0.0"
+description = "CLI y servidor MCP para Gale (Risk of Rain 2): instalar, escanear, verificar y probar mods."
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+dependencies = []
+authors = [{ name = "Jeffry Romero" }]
+keywords = ["gale", "risk-of-rain-2", "thunderstore", "bepinex", "mcp", "mod-manager"]
+
+[project.optional-dependencies]
+mcp = ["mcp>=1.2"]
+dev = ["pytest>=8"]
+
+[project.urls]
+Repository = "https://github.com/JeffryRU/galetools"
+
+[project.scripts]
+galectl = "galetools.entrypoints.cli:main"
+galetools-mcp = "galetools.entrypoints.mcp_server:main"
+
+[tool.setuptools.packages.find]
+include = ["galetools*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
