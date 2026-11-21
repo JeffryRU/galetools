@@ -130,6 +130,29 @@ def test_load_test_success_closes_only_its_game(tmp_path):
     assert any("mod error" in e for e in r.errors)
 
 
+def test_waits_for_killed_game_to_exit_before_next_test(tmp_path):
+    svc, _, game = _loadtest(tmp_path)
+    lingering = {"left": 3}
+    original_kill = game.kill
+
+    def slow_kill(pids):  # the process stays visible for a few polls after being killed
+        game.killed |= pids
+    game.kill = slow_kill
+    real_pids = game.running_pids
+
+    def running():
+        if game.killed and lingering["left"] > 0:
+            lingering["left"] -= 1
+            if lingering["left"] == 0:
+                game.pids = set()
+        return real_pids()
+    game.running_pids = running
+
+    svc.run("P", ["A-Mod"], settings=LoadTestSettings(settle_seconds=10))
+    assert game.running_pids() == set()  # gone before run() returned, so a second test can start
+    game.kill = original_kill
+
+
 def test_load_test_refuses_if_game_open(tmp_path):
     svc, _, game = _loadtest(tmp_path)
     game.pids = {1}

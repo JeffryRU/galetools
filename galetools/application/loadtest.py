@@ -78,12 +78,19 @@ class LoadTestService:
         finally:
             if started:
                 self.game.kill(started)
+                self._wait_until_gone(started)
 
         result.seconds = self.clock.now() - start
         result.summary = parse_log(self.profiles.read_text(log_path) or "")
         result.finished_loading = result.finished_loading or (result.summary.chainloader_done and not result.note)
         result.errors = _errors(result, ignore=set())
         return result
+
+    def _wait_until_gone(self, pids: set[int], limit: float = 30.0) -> None:
+        """A killed process takes a moment to disappear; the next test must not see it as 'already open'."""
+        start = self.clock.now()
+        while self.game.running_pids() & pids and self.clock.now() - start < limit:
+            self.clock.sleep(1.0)
 
     # ------------------------------------------------------------------ baseline
 
