@@ -144,6 +144,13 @@ def test_load_test_detects_crash_and_start_timeout(tmp_path):
     assert "no arrancó" in svc.run("P", [], settings=LoadTestSettings(start_timeout=30)).note
 
 
+def test_baseline_not_cached_when_game_closed_early(tmp_path):
+    svc, _, _ = _loadtest(tmp_path, log="[Error  : Unity Log] played error\n", crash=True)
+    with pytest.raises(GaleToolsError):
+        svc.baseline_errors("P")
+    assert svc.cache.get("baseline:build-1") is None
+
+
 def test_baseline_errors_are_discarded_and_cached(tmp_path):
     svc, _, _ = _loadtest(tmp_path, log="[Error  : Unity Log] base game error\n[Message:   BepInEx] Chainloader startup complete\n")
     base = svc.baseline_errors("P")

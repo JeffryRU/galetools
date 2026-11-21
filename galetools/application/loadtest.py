@@ -95,7 +95,13 @@ class LoadTestService:
             return set(cached.get("messages", []))
         base = self.run(profile, [], name="base", settings=LoadTestSettings(settle_seconds=30))
         messages = sorted(base.summary.error_messages()) if base.summary else []
-        self.cache.put(key, {"messages": messages})
+        # Only a clean, untouched baseline is trustworthy: if the game was closed early, crashed or someone
+        # played in it, its errors are not "base game noise" and must not be cached (they would hide real errors).
+        if base.finished_loading and not base.note:
+            self.cache.put(key, {"messages": messages})
+        else:
+            raise GaleToolsError("La prueba base no terminó limpia (" + (base.note or "no llegó a cargar")
+                                 + "). No se guardó; vuelve a lanzar la prueba sin tocar el juego mientras se ejecuta.")
         return set(messages)
 
     def run_vs_baseline(self, profile: str, wanted: list[str], settings: LoadTestSettings | None = None) -> LoadTestResult:
